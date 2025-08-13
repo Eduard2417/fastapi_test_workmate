@@ -1,11 +1,14 @@
-import requests
+
+import asyncio
 from io import BytesIO
 
-import pandas as pd
+import aiohttp
 from bs4 import BeautifulSoup
+import pandas as pd
+import requests
 
 
-def parse_href(url: str, time: str) -> str | None:
+async def parse_href(url: str, time: str) -> str | None:
     """
     Извлекает URL для скачивания файла с сайта Spimex по указанному времени.
 
@@ -20,8 +23,11 @@ def parse_href(url: str, time: str) -> str | None:
         >>> url = "https://spimex.com/markets/oil_products/trades/results/"
         >>> download_url = parse_href(url, "10:30")
     """
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, 'html.parser')
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            html = await response.text()
+
+    soup = BeautifulSoup(html, 'html.parser')
     div = soup.find('div', id='comp_d609bce6ada86eff0b6f7e49e6bae904')
     for div_item in div.find_all('div', class_='accordeon-inner__wrap-item'):
         if div_item.find('span').text.strip() == time:
@@ -32,7 +38,7 @@ def parse_href(url: str, time: str) -> str | None:
         return None
 
 
-def download_file(file_url: str) -> pd.DataFrame:
+async def download_file(file_url: str) -> pd.DataFrame:
     """
     Скачивает Excel-файл по URL и возвращает его содержимое в виде DataFrame.
 
@@ -45,11 +51,13 @@ def download_file(file_url: str) -> pd.DataFrame:
     Пример:
         >>> df = download_file("https://example.com/data.xlsx")
     """
-    file_content = requests.get(file_url).content
-    return pd.read_excel(BytesIO(file_content))
+    async with aiohttp.ClientSession() as session:
+        async with session.get(file_url) as response:
+            file_content = await response.read()
+            return pd.read_excel(BytesIO(file_content))
 
 
-def save_filtered_csv(df: pd.DataFrame, time: str) -> str | None:
+async def save_filtered_csv(df: pd.DataFrame, time: str) -> str | None:
     """
     Фильтрует DataFrame и сохраняет данные в Excel-файл.
 
@@ -77,5 +85,10 @@ def save_filtered_csv(df: pd.DataFrame, time: str) -> str | None:
         return None
     start_idx = mask.idxmax() + 3
     filtered_df = df.iloc[start_idx:]
-    filtered_df.to_excel(csv_filename, index=False, engine='openpyxl')
+    await asyncio.to_thread(
+        filtered_df.to_excel,
+        csv_filename,
+        index=False,
+        engine='openpyxl'
+    )
     return csv_filename

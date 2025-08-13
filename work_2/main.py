@@ -8,7 +8,7 @@ import pandas as pd
 from parse_utils import parse_href, download_file, save_filtered_csv
 from models import Base, SpimexTradingResults
 
-time = '21.07.2025'
+time = '13.08.2025'
 url = 'https://spimex.com/markets/oil_products/trades/results/'
 DATABASE_URL = "sqlite+aiosqlite:///database.sqlite"
 
@@ -50,11 +50,11 @@ async def main(clear: bool = True) -> None:
     """
     await create_database()
 
-    href = parse_href(url, time)
+    href = await parse_href(url, time)
     if not href:
         raise ValueError(f"Не найден файл для времени {time}")
-    file = download_file(href)
-    file_name = save_filtered_csv(file, time)
+    file = await download_file(href)
+    file_name = await save_filtered_csv(file, time)
 
     df = pd.read_excel(file_name)
     data = df.to_dict(orient='records')
