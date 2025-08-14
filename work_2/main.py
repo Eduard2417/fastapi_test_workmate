@@ -8,7 +8,7 @@ import pandas as pd
 from parse_utils import parse_href, download_file, save_filtered_csv
 from models import Base, SpimexTradingResults
 
-time = '13.08.2025'
+times = ('13.08.2025',)
 url = 'https://spimex.com/markets/oil_products/trades/results/'
 DATABASE_URL = "sqlite+aiosqlite:///database.sqlite"
 
@@ -50,41 +50,42 @@ async def main(clear: bool = True) -> None:
     """
     await create_database()
 
-    href = await parse_href(url, time)
-    if not href:
-        raise ValueError(f"Не найден файл для времени {time}")
-    file = await download_file(href)
-    file_name = await save_filtered_csv(file, time)
+    for time in times:
+        href = await parse_href(url, time)
+        if not href:
+            raise ValueError(f"Не найден файл для времени {time}")
+        file = await download_file(href)
+        file_name = await save_filtered_csv(file, time)
 
-    df = pd.read_excel(file_name)
-    data = df.to_dict(orient='records')
+        df = pd.read_excel(file_name)
+        data = df.to_dict(orient='records')
 
-    async with async_session() as session:
-        for row in data:
-            if row['Форма СЭТ-БТ'] == 'Итого:':
-                break
+        async with async_session() as session:
+            for row in data:
+                if row['Форма СЭТ-БТ'] == 'Итого:':
+                    break
 
-            if row['Unnamed: 14'] != '-':
+                if row['Unnamed: 14'] != '-':
 
-                date_obj = datetime.strptime(time, '%d.%m.%Y').date()
+                    date_obj = datetime.strptime(time, '%d.%m.%Y').date()
 
-                spimex = SpimexTradingResults(
-                    exchange_product_id=row['Форма СЭТ-БТ'],
-                    exchange_product_name=row['Unnamed: 2'],
-                    oil_id=row['Форма СЭТ-БТ'][:4],
-                    delivery_basis_id=row['Форма СЭТ-БТ'][4:7],
-                    delivery_basis_name=row['Unnamed: 3'],
-                    delivery_type_id=row['Форма СЭТ-БТ'][-1],
-                    volume=row['Unnamed: 4'],
-                    total=row['Unnamed: 5'],
-                    count=row['Unnamed: 14'],
-                    date=date_obj
-                )
-                session.add(spimex)
-        await session.commit()
+                    spimex = SpimexTradingResults(
+                        exchange_product_id=row['Форма СЭТ-БТ'],
+                        exchange_product_name=row['Unnamed: 2'],
+                        oil_id=row['Форма СЭТ-БТ'][:4],
+                        delivery_basis_id=row['Форма СЭТ-БТ'][4:7],
+                        delivery_basis_name=row['Unnamed: 3'],
+                        delivery_type_id=row['Форма СЭТ-БТ'][-1],
+                        volume=row['Unnamed: 4'],
+                        total=row['Unnamed: 5'],
+                        count=row['Unnamed: 14'],
+                        date=date_obj
+                    )
+                    session.add(spimex)
+            await session.commit()
 
-    if clear:
-        os.remove(file_name)
+        if clear:
+            os.remove(file_name)
 
 
 if __name__ == '__main__':
