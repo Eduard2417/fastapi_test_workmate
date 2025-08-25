@@ -22,8 +22,8 @@ class SpimexTradingResults(Base):
     count: Mapped[int | None]
     date: Mapped[dt.datetime]
     created_on: Mapped[dt.datetime] = mapped_column(
-        server_default=text("(datetime('now', 'localtime'))"))
+        server_default=text("CURRENT_TIMESTAMP"))
 
     updated_on: Mapped[dt.datetime] = mapped_column(
-        server_default=text("(datetime('now', 'localtime'))"),
-        onupdate=text("(datetime('now', 'localtime'))"))
+        server_default=text("CURRENT_TIMESTAMP"),
+        onupdate=text("CURRENT_TIMESTAMP"))

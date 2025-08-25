@@ -5,7 +5,6 @@ from io import BytesIO
 import aiohttp
 from bs4 import BeautifulSoup
 import pandas as pd
-import requests
 
 
 async def parse_href(url: str, time: str) -> str | None:
