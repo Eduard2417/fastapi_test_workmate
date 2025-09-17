@@ -6,11 +6,7 @@ from pydantic import BaseModel, constr, Field, ConfigDict
 
 
 class SpimexDateModel(BaseModel):
-    date: Tuple[constr(min_length=10, max_length=10), ...]
-
-
-class SpimexLimitModel(BaseModel):
-    limit: int = Field(ge=1, le=100)
+    date: Tuple[constr(min_length=8, max_length=10), ...]
 
 
 class SpimexBaseModel(BaseModel):

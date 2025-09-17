@@ -14,7 +14,7 @@ services:
       retries: 10
     restart: unless-stopped
 
-  sqlalchemy:
+  fast-api:
     build: ./src
     container_name: fastapi
     ports:
@@ -33,5 +33,5 @@ services:
     - "6379:6379"
     env_file:
       - ./.env
-    command: redis-server --requirepass spimex_cache_password --appendonly yes
+    command: redis-server --bind 0.0.0.0 --requirepass spimex_cache_password --appendonly yes
     restart: unless-stopped

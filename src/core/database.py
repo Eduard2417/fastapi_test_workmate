@@ -1,14 +1,33 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.pool import StaticPool
 
 from core.config import settings
 
 
-DATABASE_URL = (f"postgresql+asyncpg://{settings.POSTGRES_USER}:"
+def get_databases_url():
+    if not settings.TESTING:
+        return (f"postgresql+asyncpg://{settings.POSTGRES_USER}:"
                 f"{settings.POSTGRES_PASSWORD}@{settings.DB_HOST}:"
                 f"{settings.DB_PORT}/{settings.POSTGRES_DB}")
+    return "sqlite+aiosqlite:///:memory:"
 
-engine = create_async_engine(url=DATABASE_URL, echo=True)
+
+def create_engine_with_config():
+    database_url = get_databases_url()
+
+    if settings.TESTING:
+        return create_async_engine(
+            url=database_url,
+            echo=False,
+            connect_args={"check_same_thread": False},
+            poolclass=StaticPool
+        )
+    else:
+        return create_async_engine(url=database_url, echo=False)
+
+
+engine = create_engine_with_config()
 async_session = async_sessionmaker(bind=engine)
 
 

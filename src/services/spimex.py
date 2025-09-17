@@ -7,7 +7,7 @@ from models.spimex import SpimexTradingResults
 
 
 def get_filters(**kargs) -> Dict[str, Any]:
-    return {key: value for key, value in kargs.items() if value and value != ''}
+    return {key: value for key, value in kargs.items() if value}
 
 
 def get_all_spimex() -> Select:

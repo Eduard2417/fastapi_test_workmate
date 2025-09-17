@@ -62,6 +62,12 @@ class RedisManager:
                 decode_responses=True
             )
         return self._client
+    
+    async def close(self) -> None:
+        """Корректно закрывает соединение с Redis"""
+        if self._client:
+            await self._client.close()
+            self._client = None
 
     async def get_cached_data(self, key: str) -> Any:
         """
